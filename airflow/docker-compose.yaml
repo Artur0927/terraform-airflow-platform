@@ -13,6 +13,8 @@ x-airflow-common:
   depends_on:
     - postgres
   user: "${AIRFLOW_UID:-50000}:0"
+  env_file:
+    - .env
 
 services:
   postgres:
