@@ -1,0 +1,35 @@
+name: Deploy to EC2
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navigate to the project folder
+            # Note: Ensure you have cloned the repo here on the server first!
+            cd terraform-airflow-platform/airflow
+            
+            # Pull latest changes
+            # We go up one level to pull the root repo
+            cd .. 
+            git pull origin main
+            
+            # Go back to airflow directory where docker-compose.yaml is
+            cd airflow
+            
+            # Restart Containers
+            sudo /usr/local/bin/docker-compose down
+            sudo /usr/local/bin/docker-compose up -d --build
