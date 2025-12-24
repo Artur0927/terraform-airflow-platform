@@ -10,6 +10,10 @@ x-airflow-common:
     - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
     - AIRFLOW__CORE__LOAD_EXAMPLES=False
     - _PIP_ADDITIONAL_REQUIREMENTS=
+    # Optimization for t3.micro (Free Tier)
+    - AIRFLOW__WEBSERVER__WORKERS=2
+    - AIRFLOW__CORE__PARALLELISM=2
+    - AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL=30
   depends_on:
     - postgres
   user: "${AIRFLOW_UID:-50000}:0"
