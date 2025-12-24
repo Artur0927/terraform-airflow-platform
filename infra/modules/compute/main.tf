@@ -5,6 +5,13 @@ resource "aws_instance" "airflow_ec2" {
   vpc_security_group_ids      = [var.security_group_id]
   associate_public_ip_address = true
   key_name                    = var.key_name
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+
+  metadata_options {
+    http_put_response_hop_limit = 2
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"
+  }
 
   # User Data: Install Docker & Compose
   user_data = file("${path.module}/setup.sh")
@@ -45,5 +52,14 @@ resource "aws_instance" "airflow_ec2" {
 
   tags = {
     Name = "${var.project_name}-ec2"
+  }
+}
+
+resource "aws_eip" "airflow_eip" {
+  instance = aws_instance.airflow_ec2.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-eip"
   }
 }

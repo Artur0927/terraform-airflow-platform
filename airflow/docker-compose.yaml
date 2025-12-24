@@ -69,7 +69,7 @@ services:
       - |
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
-        exec /entrypoint airflow version && airflow db migrate && airflow users create --username airflow --password airflow --firstname Airflow --lastname Admin --role Admin --email admin@example.com
+        exec /entrypoint airflow version && airflow db migrate && airflow users create --username airflow --password airflow --firstname Airflow --lastname Admin --role Admin --email admin@example.com && airflow connections add 'dwh_postgres' --conn-uri 'postgresql://airflow:airflow@postgres:5432/airflow'
     user: "0:0"
     volumes:
       - ./dags:/sources/dags

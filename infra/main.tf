@@ -21,6 +21,7 @@ module "compute" {
   subnet_id         = module.networking.subnet_id
   security_group_id = module.networking.security_group_id
   private_key_path  = var.private_key_path
+  s3_bucket_arn     = module.storage.bucket_arn
 }
 
 output "ec2_public_ip" {

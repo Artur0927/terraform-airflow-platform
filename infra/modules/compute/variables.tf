@@ -27,3 +27,8 @@ variable "private_key_path" {
   description = "Path to the local private SSH key for provisioning"
   type        = string
 }
+
+variable "s3_bucket_arn" {
+  description = "ARN of the S3 bucket for IAM policy"
+  type        = string
+}
