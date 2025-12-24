@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from airflow import DAG
+from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.operators.python import PythonOperator
 
 
-BUCKET_NAME = "airflow-data-platform-dev-bucket"
+BUCKET_NAME = Variable.get("s3_bucket_name", default_var="airflow-data-platform-dev-bucket")
 S3_KEY = "raw/sales.csv"
 
 

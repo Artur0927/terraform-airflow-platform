@@ -1,203 +1,107 @@
-# Terraform Airflow Data Platform
+# Terraform Airflow Data Platform 🚀
 
-This project demonstrates a **production-style data platform on AWS**, combining **Infrastructure as Code** with **Apache Airflow–based data orchestration**.
+**A Production-Grade, Automated Data Engineering Platform on AWS.**
 
-The goal of the project is to showcase a realistic **end-to-end workflow** —  
-from secure infrastructure provisioning to data ingestion and orchestration.
-
----
-
-## Project Overview
-
-The platform consists of:
-
-- AWS infrastructure provisioned using **Terraform**
-- An **EC2-based execution environment**
-- **Apache Airflow** running in Docker
-- **PostgreSQL** used as a target database
-- **AWS S3** as a source for raw data
-- Secure access via **IAM Roles and STS** (no static credentials)
-
-The project follows a clear **separation of concerns** between infrastructure provisioning and application-level configuration, reflecting common real-world practices.
+This project demonstrates a fully automated, **Infrastructure-as-Code (IaC)** deployment of Apache Airflow on AWS. It is engineered to run reliably within the **AWS Free Tier** (`t3.micro`) using advanced resource optimization techniques.
 
 ---
 
-## Infrastructure Provisioning
+## 🏗 Technical Architecture
 
-Infrastructure is defined using **Terraform** and includes:
+### 1. Infrastructure as Code (Terraform)
+The project uses a **modular Terraform architecture** for clean separation of concerns and reusability:
 
-- Virtual Private Cloud (VPC)
-- Public Subnet and routing
-- Security Groups
-- EC2 instance
-- IAM Role for secure AWS access
-- S3 bucket for raw data storage
+-   **`modules/networking`**: VPC, Public Subnet, Internet Gateway, Route Tables, Security Groups (Ports 22, 8080).
+-   **`modules/storage`**: S3 Bucket provisioning (`airflow-data-platform-{env}-bucket`) for data ingestion.
+-   **`modules/compute`**: EC2 Instance provisioning with integrated **User Data** automation.
+-   **Environment Isolation**: Strict separation of `dev` and `prod` via `.tfvars`.
 
-Terraform is responsible for creating a **reproducible execution environment** in AWS.
-
-The infrastructure code represents the **intended system design** and can be used to recreate the environment from scratch.
-
----
-
-## SSH Access and Key Management
-
-Secure access to the EC2 instance is implemented using **SSH key-based authentication**.
-
-### Key Generation
-
-- An SSH key pair was generated locally on the developer machine using `ssh-keygen`
-- The private key is stored securely on the local machine and never shared
-- The public key is used to allow access to the EC2 instance
-
-### Usage
-
-- The public key is associated with the EC2 instance
-- SSH access is performed using the private key from the local machine
-- Password-based authentication is disabled, following security best practices
-
-This approach ensures **secure and auditable access** to the infrastructure without relying on passwords.
+### 2. Full-Stack Automation ("One-Click Deployment")
+Running `terraform apply` performs the entire end-to-end setup without manual intervention:
+1.  **Provisioning**: Boots an Amazon Linux 2023 server.
+2.  **Configuration**: Automatically installs Docker and Docker Compose via `user_data` scripts.
+3.  **Deployment**: Uploads Airflow DAGs and Configs using Terraform File Provisioners.
+4.  **Startup**: Launch the application using `remote-exec`.
 
 ---
 
-## Security and Authentication
+## 💡 Key Engineering Challenges Solved
 
-AWS access is implemented using **IAM Roles**, not static credentials.
+### 1. Free Tier Optimization (Swap File)
+*   **Challenge**: The `t3.micro` instance (1GB RAM) is technically too small for Airflow + Postgres, causing frequent "Connection Refused" (OOM Kill) crashes.
+*   **Solution**: We automated the creation of a **2GB Swap File** during boot. This extends available memory using disk space, allowing the platform to run stably on free hardware.
 
-- An IAM Role with S3 permissions is attached to the EC2 instance
-- Applications use **AWS STS temporary credentials** obtained via the EC2 metadata service
-- No AWS access keys or secrets are stored in code, configuration files, or environment variables
+### 2. Automated Database Initialization
+*   **Challenge**: Docker containers would start but crash immediately because the Postgres database schema and Admin user were missing.
+*   **Solution**: Implemented a custom `airflow-init` service in `docker-compose.yaml` that runs **before** the webserver to:
+    -   Execute `airflow db migrate` (Schema Creation).
+    -   Create the default `airflow` Admin user.
 
-This reflects **AWS best practices** for secure, production-grade authentication.
-
----
-
-## Application Layer
-
-Application setup is performed **on top of the provisioned infrastructure** and includes:
-
-- Docker and Docker Compose installation
-- Apache Airflow deployment
-- PostgreSQL configuration
-- Network configuration between services
-
-The application layer is intentionally separated from infrastructure provisioning to mirror **common production workflows**, where infrastructure and application lifecycle are managed independently.
+### 3. Permission & Security
+*   **Challenge**: `Permission Denied` errors when Airflow (UID 50000) tried to write logs to host-mounted volumes owned by root.
+*   **Solution**: The deployment script automatically pre-creates `logs`, `dags`, and `plugins` directories with **UID 50000 ownership** before starting containers.
 
 ---
 
-## Data Pipeline
+## 🚀 Deployment Guide
 
-The Airflow DAG implements the following workflow:
+### Prerequisites
+-   **Terraform** installed.
+-   **AWS Credentials** configured.
+-   **SSH Key Pair**: You must provide the path to your private key.
 
-1. Read a CSV file from an S3 bucket
-2. Download data using IAM Role authentication (STS)
-3. Create target tables in PostgreSQL
-4. Load data using `COPY FROM STDIN`
-5. Validate successful data ingestion
+### 1. Deploy to Production
+To provision the infrastructure and start the application:
 
-The pipeline demonstrates a typical **ELT pattern** used in data engineering projects.
+```bash
+cd infra
+terraform apply -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key.pem"
+```
 
----
+*Replace `/path/to/your/key.pem` with your actual private key location (e.g., `~/.ssh/id_rsa`).*
 
-## 📸 Screenshots
+### 2. Access the Platform
+Once applied, Terraform will output the public IP.
+-   **Web UI**: `http://<EC2-PUBLIC-IP>:8080`
+-   **Login**: `airflow` / `airflow`
 
-The following screenshots provide a visual overview of the platform,
-from infrastructure provisioning to successful data ingestion.
+### 3. Destroy (Cost Savings)
+When finished, strictly follow the **Destroy-Before-Create** workflow to avoid costs:
 
-### AWS EC2 Instance
-
-EC2 instance provisioned with Terraform and used as the execution environment
-for Apache Airflow and related services.
-
-![AWS EC2 instance](images/AWS%20ES2%20instance.png)
-
----
-
-### Apache Airflow DAG Graph
-
-DAG dependency graph in Apache Airflow, illustrating the ELT workflow structure.
-
-![Airflow DAG graph](images/Airflow%20dag%20graph.png)
+```bash
+terraform destroy -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key.pem"
+```
 
 ---
 
-### Apache Airflow DAG Runs
+## 📂 Project Structure
 
-Successful DAG runs confirming correct orchestration and execution.
-
-![Airflow DAG runs](images/Airflow%20dag%20runs.png)
-
----
-
-### PostgreSQL Data
-
-Data successfully loaded into PostgreSQL as a result of the ELT pipeline.
-
-![Postgres data](images/Postgres%20data.png)
-
----
-
-## Project Structure
-
-
+```
 terraform-airflow-platform/
-├── infra/                  # Terraform infrastructure
-│   ├── main.tf
-│   ├── variables.tf
-│   └── terraform.lock.hcl
+├── infra/                      # Terraform Infrastructure
+│   ├── modules/
+│   │   ├── networking/         # VPC, Subnets, Security Groups
+│   │   ├── storage/            # S3 Buckets
+│   │   └── compute/            # EC2, User Data, Provisioners
+│   ├── dev.tfvars              # Development Configuration
+│   ├── prod.tfvars             # Production Configuration (t3.micro)
+│   └── main.tf                 # Root Module Orchestration
 │
-├── airflow/                # Airflow runtime
-│   ├── docker-compose.yaml
-│   └── dags/
-│       └── elt_s3_to_postgres.py
+├── airflow/                    # Application Code
+│   ├── docker-compose.yaml     # Airflow Service Definition (with Init)
+│   └── dags/                   # ELT Pipelines (Python)
 │
-├── images/                 # Project screenshots
-│   ├── Airflow dag graph.png
-│   ├── Airflow dag runs.png
-│   ├── AWS ES2 instance.png
-│   └── Postgres data.png
-│
-├── README.md
-└── .gitignore
+└── README.md
+```
 
-## Technologies Used
-
-- **Terraform**
-- **AWS** (EC2, VPC, S3, IAM, STS)
-- **Apache Airflow**
-- **Docker & Docker Compose**
-- **PostgreSQL**
-- **Python** (`boto3`, `psycopg2`)
-- **SSH** (key-based authentication)
+## 🛠 Technologies Used
+-   **Terraform** (IaC, Modules, Provisioners)
+-   **AWS** (EC2, VPC, S3, IAM, Security Groups)
+-   **Docker & Docker Compose**
+-   **Apache Airflow 2.9.2**
+-   **PostgreSQL 15**
+-   **Python** (Boto3, Psycopg2)
+-   **Bash** (Automation Scripts)
 
 ---
-
-## Key Concepts Demonstrated
-
-- Infrastructure as Code
-- Secure SSH access and key management
-- IAM Roles and temporary credentials
-- Separation of infrastructure and application layers
-- Production-style Airflow deployment
-- End-to-end ELT pipeline design
-
----
-
-## Summary
-
-This project reflects a **realistic engineering workflow** where:
-
-- Infrastructure is provisioned declaratively
-- Security is handled using cloud-native best practices
-- Application services are deployed in a controlled execution environment
-- Data pipelines are orchestrated using Apache Airflow
-
-The repository is designed to be **clear, reproducible, and representative of real-world data platform engineering**.
-
----
-
-## Author
-
-**Artur Martirosyan**
-
-
-
+**Author**: Artur Martirosyan

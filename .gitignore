@@ -2,7 +2,7 @@
 .terraform/
 terraform.tfstate
 terraform.tfstate.backup
-*.tfvars
+# *.tfvars (Allowed for portfolio demo)
 
 # Airflow
 .env

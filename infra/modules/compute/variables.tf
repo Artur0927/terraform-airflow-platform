@@ -1,0 +1,29 @@
+variable "project_name" {
+  description = "Project name"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "Instance type"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet ID"
+  type        = string
+}
+
+variable "security_group_id" {
+  description = "Security Group ID"
+  type        = string
+}
+
+variable "key_name" {
+  description = "SSH Key Name"
+  type        = string
+}
+
+variable "private_key_path" {
+  description = "Path to the local private SSH key for provisioning"
+  type        = string
+}

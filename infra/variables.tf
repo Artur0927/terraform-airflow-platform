@@ -31,3 +31,8 @@ variable "key_name" {
   type        = string
   default     = "airflow-data-platform-key"
 }
+
+variable "private_key_path" {
+  description = "Path to the local private SSH key (e.g., ~/.ssh/id_rsa)"
+  type        = string
+}
