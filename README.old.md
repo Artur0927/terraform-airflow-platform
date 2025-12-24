@@ -1,0 +1,107 @@
+# Terraform Airflow Data Platform 🚀
+
+**A Production-Grade, Automated Data Engineering Platform on AWS.**
+
+This project demonstrates a fully automated, **Infrastructure-as-Code (IaC)** deployment of Apache Airflow on AWS. It is engineered to run reliably within the **AWS Free Tier** (`t3.micro`) using advanced resource optimization techniques.
+
+---
+
+## 🏗 Technical Architecture
+
+### 1. Infrastructure as Code (Terraform)
+The project uses a **modular Terraform architecture** for clean separation of concerns and reusability:
+
+-   **`modules/networking`**: VPC, Public Subnet, Internet Gateway, Route Tables, Security Groups (Ports 22, 8080).
+-   **`modules/storage`**: S3 Bucket provisioning (`airflow-data-platform-{env}-bucket`) for data ingestion.
+-   **`modules/compute`**: EC2 Instance provisioning with integrated **User Data** automation.
+-   **Environment Isolation**: Strict separation of `dev` and `prod` via `.tfvars`.
+
+### 2. Full-Stack Automation ("One-Click Deployment")
+Running `terraform apply` performs the entire end-to-end setup without manual intervention:
+1.  **Provisioning**: Boots an Amazon Linux 2023 server.
+2.  **Configuration**: Automatically installs Docker and Docker Compose via `user_data` scripts.
+3.  **Deployment**: Uploads Airflow DAGs and Configs using Terraform File Provisioners.
+4.  **Startup**: Launch the application using `remote-exec`.
+
+---
+
+## 💡 Key Engineering Challenges Solved
+
+### 1. Free Tier Optimization (Swap File)
+*   **Challenge**: The `t3.micro` instance (1GB RAM) is technically too small for Airflow + Postgres, causing frequent "Connection Refused" (OOM Kill) crashes.
+*   **Solution**: We automated the creation of a **2GB Swap File** during boot. This extends available memory using disk space, allowing the platform to run stably on free hardware.
+
+### 2. Automated Database Initialization
+*   **Challenge**: Docker containers would start but crash immediately because the Postgres database schema and Admin user were missing.
+*   **Solution**: Implemented a custom `airflow-init` service in `docker-compose.yaml` that runs **before** the webserver to:
+    -   Execute `airflow db migrate` (Schema Creation).
+    -   Create the default `airflow` Admin user.
+
+### 3. Permission & Security
+*   **Challenge**: `Permission Denied` errors when Airflow (UID 50000) tried to write logs to host-mounted volumes owned by root.
+*   **Solution**: The deployment script automatically pre-creates `logs`, `dags`, and `plugins` directories with **UID 50000 ownership** before starting containers.
+
+---
+
+## 🚀 Deployment Guide
+
+### Prerequisites
+-   **Terraform** installed.
+-   **AWS Credentials** configured.
+-   **SSH Key Pair**: You must provide the path to your private key.
+
+### 1. Deploy to Production
+To provision the infrastructure and start the application:
+
+```bash
+cd infra
+terraform apply -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key.pem"
+```
+
+*Replace `/path/to/your/key.pem` with your actual private key location (e.g., `~/.ssh/id_rsa`).*
+
+### 2. Access the Platform
+Once applied, Terraform will output the public IP.
+-   **Web UI**: `http://<EC2-PUBLIC-IP>:8080`
+-   **Login**: `airflow` / `airflow`
+
+### 3. Destroy (Cost Savings)
+When finished, strictly follow the **Destroy-Before-Create** workflow to avoid costs:
+
+```bash
+terraform destroy -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key.pem"
+```
+
+---
+
+## 📂 Project Structure
+
+```
+terraform-airflow-platform/
+├── infra/                      # Terraform Infrastructure
+│   ├── modules/
+│   │   ├── networking/         # VPC, Subnets, Security Groups
+│   │   ├── storage/            # S3 Buckets
+│   │   └── compute/            # EC2, User Data, Provisioners
+│   ├── dev.tfvars              # Development Configuration
+│   ├── prod.tfvars             # Production Configuration (t3.micro)
+│   └── main.tf                 # Root Module Orchestration
+│
+├── airflow/                    # Application Code
+│   ├── docker-compose.yaml     # Airflow Service Definition (with Init)
+│   └── dags/                   # ELT Pipelines (Python)
+│
+└── README.md
+```
+
+## 🛠 Technologies Used
+-   **Terraform** (IaC, Modules, Provisioners)
+-   **AWS** (EC2, VPC, S3, IAM, Security Groups)
+-   **Docker & Docker Compose**
+-   **Apache Airflow 2.9.2**
+-   **PostgreSQL 15**
+-   **Python** (Boto3, Psycopg2)
+-   **Bash** (Automation Scripts)
+
+---
+**Author**: Artur Martirosyan
