@@ -32,3 +32,9 @@ variable "s3_bucket_arn" {
   description = "ARN of the S3 bucket for IAM policy"
   type        = string
 }
+
+variable "eip_allocation_id" {
+  description = "Allocation ID of the Elastic IP to associate"
+  type        = string
+  default     = ""  # Make it optional for fallback, but we intend to use it.
+}

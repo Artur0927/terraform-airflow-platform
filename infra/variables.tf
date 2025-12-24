@@ -36,3 +36,9 @@ variable "private_key_path" {
   description = "Path to the local private SSH key (e.g., ~/.ssh/id_rsa)"
   type        = string
 }
+
+variable "eip_allocation_id" {
+  description = "Allocation ID of the Elastic IP to associate"
+  type        = string
+  default     = ""
+}

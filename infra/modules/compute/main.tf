@@ -55,11 +55,11 @@ resource "aws_instance" "airflow_ec2" {
   }
 }
 
-resource "aws_eip" "airflow_eip" {
-  instance = aws_instance.airflow_ec2.id
-  domain   = "vpc"
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = aws_instance.airflow_ec2.id
+  allocation_id = var.eip_allocation_id
+}
 
-  tags = {
-    Name = "${var.project_name}-eip"
-  }
+data "aws_eip" "by_id" {
+  id = var.eip_allocation_id
 }

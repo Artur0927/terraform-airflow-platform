@@ -1,5 +1,5 @@
 output "public_ip" {
-  value = aws_eip.airflow_eip.public_ip
+  value = data.aws_eip.by_id.public_ip
 }
 
 output "public_dns" {

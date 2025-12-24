@@ -22,6 +22,7 @@ module "compute" {
   security_group_id = module.networking.security_group_id
   private_key_path  = var.private_key_path
   s3_bucket_arn     = module.storage.bucket_arn
+  eip_allocation_id = var.eip_allocation_id
 }
 
 output "ec2_public_ip" {
