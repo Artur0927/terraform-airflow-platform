@@ -33,6 +33,11 @@ variable "s3_bucket_arn" {
   type        = string
 }
 
+variable "s3_bucket_name" {
+  description = "Name of the S3 bucket for application access"
+  type        = string
+}
+
 variable "eip_allocation_id" {
   description = "Allocation ID of the Elastic IP to associate"
   type        = string

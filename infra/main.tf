@@ -22,6 +22,7 @@ module "compute" {
   security_group_id = module.networking.security_group_id
   private_key_path  = var.private_key_path
   s3_bucket_arn     = module.storage.bucket_arn
+  s3_bucket_name    = module.storage.bucket_name
   eip_allocation_id = var.eip_allocation_id
 }
 

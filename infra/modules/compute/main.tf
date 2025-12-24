@@ -43,6 +43,7 @@ resource "aws_instance" "airflow_ec2" {
       "echo 'Waiting for cloud-init to finish...'",
       "while [ ! -f /usr/local/bin/docker-compose ]; do sleep 5; done", # Wait for User Data
       "cd /home/ec2-user/airflow",
+      "echo 'AIRFLOW_VAR_S3_BUCKET_NAME=${var.s3_bucket_name}' > .env",
       "mkdir -p logs plugins dags",
       "sudo chown -R 50000:0 logs plugins dags",
       "sudo chmod -R 777 logs plugins dags",
