@@ -18,16 +18,13 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Navigate to the project folder
-            # Note: Ensure you have cloned the repo here on the server first!
-            cd terraform-airflow-platform/airflow
-            
-            # Pull latest changes
-            # We go up one level to pull the root repo
-            cd .. 
+            # ✅ FIX: Clone repo if it doesn't exist
+            if [ ! -d "terraform-airflow-platform" ]; then
+              echo "Repo not found. Cloning..."
+              git clone https://github.com/Artur0927/terraform-airflow-platform.git
+            fi
+            cd terraform-airflow-platform
             git pull origin main
-            
-            # Go back to airflow directory where docker-compose.yaml is
             cd airflow
             
             # Restart Containers
