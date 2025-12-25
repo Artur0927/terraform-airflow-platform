@@ -1,4 +1,5 @@
 # Terraform Airflow Data Platform 🚀
+![Build Status](https://github.com/Artur0927/terraform-airflow-platform/actions/workflows/deploy.yml/badge.svg)
 
 **A Production-Grade, Automated Data Engineering Platform on AWS.**
 
@@ -17,11 +18,17 @@ The project uses a **modular Terraform architecture** for clean separation of co
 -   **Permanent Static IP**: Uses **AWS Elastic IP (EIP)** to ensure the application IP (`98.80.31.243`) never changes, even if the infrastructure is destroyed and recreated.
 -   **Security**: Uses **IAM Roles** (Instance Profiles) for secure S3 access, avoiding hardcoded AWS Keys.
 
-### 2. CI/CD Pipeline (GitHub Actions)
-A fully automated deployment pipeline is implemented in `.github/workflows/deploy.yml`:
--   **Trigger**: Runs automatically on every `git push` to `main`.
--   **Action**: SSHs into the EC2 instance, pulls the latest code, and seamlessly restarts the Docker containers.
--   **Auto-Healing**: Automatically detects if the repository is missing on the server and clones it if necessary.
+### 2. 🚀 CI/CD Pipeline
+The project features a fully automated **Continuous Deployment** pipeline powered by GitHub Actions.
+
+**The Workflow:**
+1.  **Code Push** 💻: Developer pushes code to the `main` branch.
+2.  **Build** 🏗️: GitHub Action triggers, checking out the latest code.
+3.  **SSH Connection** 🔐: Securely connects to the AWS EC2 instance using GitHub Secrets (`HOST_DNS`, `USERNAME`, `EC2_SSH_KEY`).
+4.  **Deploy** 🔄:
+    -   Pulls the latest changes from git.
+    -   Refreshes `docker-compose.yaml` configuration.
+    -   Restarts containers with zero-downtime (via `docker-compose up -d --build`).
 
 ### 3. Full-Stack Automation ("One-Click Deployment")
 Running `terraform apply` performs the entire end-to-end setup without manual intervention:
