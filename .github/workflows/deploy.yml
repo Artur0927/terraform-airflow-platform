@@ -11,30 +11,43 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: SSH and Deploy
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.AIRFLOW_PRIVATE_IP }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          proxy_host: ${{ secrets.BASTION_HOST }}
-          proxy_username: ${{ secrets.USERNAME }}
-          proxy_key: ${{ secrets.EC2_SSH_KEY }}
-          proxy_port: 22
-          timeout: 30s
-          command_timeout: 30m
-          debug: true
-          script: |
-            # ✅ FIX: Clone repo if it doesn't exist
+        
+      - name: Deploy via SSH Proxy
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          BASTION: ${{ secrets.BASTION_HOST }}
+          TARGET: ${{ secrets.AIRFLOW_PRIVATE_IP }}
+          USER: ${{ secrets.USERNAME }}
+        run: |
+          # 1. Setup SSH Key
+          mkdir -p ~/.ssh
+          echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # 2. Test Connection (Verbose)
+          echo "Testing Connection to $TARGET via $BASTION..."
+          ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -o ProxyCommand="ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p $USER@$BASTION -i ~/.ssh/id_rsa" \
+            -i ~/.ssh/id_rsa $USER@$TARGET "echo '✅ Connection Successful!'"
+            
+          # 3. Execute Deployment
+          echo "Deploying..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p $USER@$BASTION -i ~/.ssh/id_rsa" \
+            -i ~/.ssh/id_rsa $USER@$TARGET << 'EOF'
+            
+            # Clone or Pull
             if [ ! -d "terraform-airflow-platform" ]; then
-              echo "Repo not found. Cloning..."
+              echo "Cloning repository..."
               git clone https://github.com/Artur0927/terraform-airflow-platform.git
             fi
-            cd terraform-airflow-platform
-            git pull origin main
-            cd airflow
             
-            # Restart Containers
+            cd terraform-airflow-platform
+            echo "Pulling latest changes..."
+            git pull origin main
+            
+            cd airflow
+            echo "Restarting Airflow..."
             sudo /usr/local/bin/docker-compose down
             sudo /usr/local/bin/docker-compose up -d --build
+          EOF
