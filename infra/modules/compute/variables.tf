@@ -43,3 +43,8 @@ variable "eip_allocation_id" {
   type        = string
   default     = ""  # Make it optional for fallback, but we intend to use it.
 }
+
+variable "bastion_public_ip" {
+  description = "Public IP of the Bastion Host for SSH tunneling"
+  type        = string
+}

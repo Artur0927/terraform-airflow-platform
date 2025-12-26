@@ -3,7 +3,7 @@ resource "aws_instance" "airflow_ec2" {
   instance_type               = var.instance_type
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [var.security_group_id]
-  associate_public_ip_address = true
+  associate_public_ip_address = false # Private Subnet!
   key_name                    = var.key_name
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
 
@@ -16,12 +16,17 @@ resource "aws_instance" "airflow_ec2" {
   # User Data: Install Docker & Compose
   user_data = file("${path.module}/setup.sh")
 
-  # Connection for Provisioners
+  # Connection for Provisioners via Bastion
   connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    private_key = file(var.private_key_path)
-    host        = self.public_ip
+    type         = "ssh"
+    user         = "ec2-user"
+    private_key  = file(var.private_key_path)
+    host         = self.private_ip # Connect to Private IP...
+    
+    # ...via the Bastion Host
+    bastion_host = var.bastion_public_ip
+    bastion_user = "ec2-user"
+    bastion_private_key = file(var.private_key_path)
   }
 
   # 1. Create Directory
@@ -37,7 +42,7 @@ resource "aws_instance" "airflow_ec2" {
     destination = "/home/ec2-user/airflow"
   }
 
-  # 2. Start Application
+  # 3. Start Application
   provisioner "remote-exec" {
     inline = [
       "echo 'Waiting for cloud-init to finish...'",
@@ -56,11 +61,6 @@ resource "aws_instance" "airflow_ec2" {
   }
 }
 
-resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.airflow_ec2.id
-  allocation_id = var.eip_allocation_id
-}
 
-data "aws_eip" "by_id" {
-  id = var.eip_allocation_id
-}
+
+# Note: EIP Association removed from here as it is handled in Networking (for NAT)

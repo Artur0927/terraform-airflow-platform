@@ -1,3 +1,5 @@
 environment   = "prod"
-instance_type = "t3.medium"
+instance_type = "t3.micro"
 eip_allocation_id = "eipalloc-09cb2053d42689e1b"
+key_name          = "devops-key"
+private_key_path  = "/Users/arturmartirosyan/Desktop/keys/devops-key.pem"

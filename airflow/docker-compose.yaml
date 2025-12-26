@@ -10,6 +10,9 @@ x-airflow-common:
     - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
     - AIRFLOW__CORE__LOAD_EXAMPLES=False
     - _PIP_ADDITIONAL_REQUIREMENTS=
+    # UI Customization
+    - AIRFLOW__WEBSERVER__INSTANCE_NAME=🚀 Artur Data Platform
+    - AIRFLOW__WEBSERVER__NAVBAR_COLOR=#00CDCD
     # Optimization for t3.small (Standard Mode)
     - AIRFLOW__WEBSERVER__WORKERS=2
     - AIRFLOW__CORE__PARALLELISM=2

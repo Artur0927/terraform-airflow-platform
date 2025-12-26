@@ -14,9 +14,13 @@ jobs:
       - name: SSH and Deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST_DNS }}
+          host: ${{ secrets.AIRFLOW_PRIVATE_IP }} # New Secret!
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          # Bastion / Jump Host Configuration
+          proxy_host: ${{ secrets.BASTION_HOST }} # NEW Secret!
+          proxy_username: ${{ secrets.USERNAME }}
+          proxy_key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # ✅ FIX: Clone repo if it doesn't exist
             if [ ! -d "terraform-airflow-platform" ]; then

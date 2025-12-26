@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+# Wait for NAT Instance (Gatekeeper) to stabilize
+sleep 30
 
 # Update packages
 sudo yum update -y
