@@ -21,8 +21,21 @@ jobs:
         run: |
           # 1. Setup SSH Key
           mkdir -p ~/.ssh
-          echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+          printf "%s\n" "$PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Validate Key Format
+          echo "Validating SSH Key format..."
+          if ! ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null; then
+            echo "❌ CRITIAL ERROR: The SSH Private Key is invalid or corrupted."
+            echo "Please verify that the 'EC2_SSH_KEY' GitHub Secret:"
+            echo "  1. Starts with '-----BEGIN ... PRIVATE KEY-----'"
+            echo "  2. Ends with '-----END ... PRIVATE KEY-----'"
+            echo "  3. Has no extra whitespace at the start/end."
+            exit 1
+          else
+            echo "✅ SSH Key is valid."
+          fi
           
           # 2. Test Connection (Verbose)
           echo "Testing Connection to $TARGET via $BASTION..."
