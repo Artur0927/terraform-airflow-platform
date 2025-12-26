@@ -12,30 +12,26 @@ This project demonstrates a fully automated, **Infrastructure-as-Code (IaC)** de
 ### 1. Infrastructure as Code (Terraform)
 The project uses a **modular Terraform architecture** for clean separation of concerns and reusability:
 
--   **`modules/networking`**: VPC, Public Subnet, Internet Gateway, Route Tables, Security Groups (Ports 22, 8080).
--   **`modules/storage`**: S3 Bucket provisioning (`airflow-data-platform-{env}-bucket`) for data ingestion.
--   **`modules/compute`**: EC2 Instance provisioning with integrated **User Data** automation.
--   **Permanent Static IP**: Uses **AWS Elastic IP (EIP)** to ensure the application IP (`<BASTION_IP>`) never changes, even if the infrastructure is destroyed and recreated.
--   **Security**: Uses **IAM Roles** (Instance Profiles) for secure S3 access, avoiding hardcoded AWS Keys.
+-   **`modules/networking`**: Enterprise-grade network topology featuring **Public/Private Subnet isolation**, High-Availability NAT Gateway (Bastion), and Application Load Balancer (ALB).
+-   **`modules/storage`**: S3 Bucket provisioning (`airflow-data-platform-{env}-bucket`) for durable data ingestion.
+-   **`modules/compute`**: EC2 Instance provisioning with automated lifecycle management via User Data.
+-   **Static Egress IP**: Utilizes **AWS Elastic IP (EIP)** to ensure consistent allow-listing capabilities for external APIs.
+-   **Security First**: Zero-trust architecture. Airflow runs in a completely isolated private subnet, accessible ONLY via the ALB (Web) or Bastion Tunnel (SSH).
 
-### 2. 🚀 CI/CD Pipeline
-The project features a fully automated **Continuous Deployment** pipeline powered by GitHub Actions.
+### 2. 🚀 Automated CI/CD Pipeline
+The project features a **Zero-Touch Deployment** pipeline powered by GitHub Actions, adhering to GitOps principles.
 
-**The Workflow:**
-1.  **Code Push** 💻: Developer pushes code to the `main` branch.
-2.  **Build** 🏗️: GitHub Action triggers, checking out the latest code.
-3.  **SSH Connection** 🔐: Securely connects to the AWS EC2 instance using GitHub Secrets (`HOST_DNS`, `USERNAME`, `EC2_SSH_KEY`).
-4.  **Deploy** 🔄:
-    -   Pulls the latest changes from git.
-    -   Refreshes `docker-compose.yaml` configuration.
-    -   Restarts containers with zero-downtime (via `docker-compose up -d --build`).
+**Workflow:**
+1.  **Code Push** 💻: Developer commits to `main`.
+2.  **Infrastructure Plan** 🏗️: Terraform verifies state and plans changes.
+3.  **Secure Delivery** 🔐: Changes are deployed via SSH Tunnel through the Bastion Host, ensuring the private instance is never exposed.
+4.  **Rolling Update** 🔄: Docker containers are rebuilt and restarted with zero downtime.
 
-### 3. Full-Stack Automation ("One-Click Deployment")
-Running `terraform apply` performs the entire end-to-end setup without manual intervention:
-1.  **Provisioning**: Boots an Amazon Linux 2023 server.
-2.  **Configuration**: Automatically installs Docker and Docker Compose via `user_data` scripts.
-3.  **Deployment**: Uploads Airflow DAGs and Configs.
-4.  **Startup**: Launch the application using `remote-exec` and auto-generates `.env` files for configuration.
+### 3. One-Click Provisioning
+A single `terraform apply` command orchestrates the entire stack:
+1.  **Network Application**: VPC, Subnets, Route Tables, IGW.
+2.  **Server Bootstrapping**: Amazon Linux 2023 initialization with Docker engine optimization.
+3.  **Application Startup**: Airflow, Postgres, and Monitoring stack initialization.
 
 ---
 
@@ -84,12 +80,13 @@ terraform apply -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key
 *Replace `/path/to/your/key.pem` with your actual private key location (e.g., `~/.ssh/id_rsa`).*
 
 ### 2. Access the Platform
-Once applied, Terraform will output the public IP.
--   **Web UI**: `http://<BASTION_IP>:8080`
--   **Login**: Default credentials (printed in Terraform Output or preset in `.env`)
+Once applied, the infrastructure will be fully operational.
+-   **Web Interface**: Access via the **Application Load Balancer** (ALB) URL output by Terraform.
+    -   *URL*: `http://<ALB_DNS_NAME>` (Standard HTTP)
+    -   *Credentials*: Defined in `.env` (Default: `airflow` / `airflow`)
 
-### 3. Destroy (Cost Savings)
-When finished, strictly follow the **Destroy-Before-Create** workflow to avoid costs:
+### 3. Destruction (Cost Management)
+To decommission the environment and prevent recurring costs:
 
 ```bash
 terraform destroy -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key.pem"
