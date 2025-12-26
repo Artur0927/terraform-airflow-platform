@@ -15,7 +15,7 @@ The project uses a **modular Terraform architecture** for clean separation of co
 -   **`modules/networking`**: VPC, Public Subnet, Internet Gateway, Route Tables, Security Groups (Ports 22, 8080).
 -   **`modules/storage`**: S3 Bucket provisioning (`airflow-data-platform-{env}-bucket`) for data ingestion.
 -   **`modules/compute`**: EC2 Instance provisioning with integrated **User Data** automation.
--   **Permanent Static IP**: Uses **AWS Elastic IP (EIP)** to ensure the application IP (`98.80.31.243`) never changes, even if the infrastructure is destroyed and recreated.
+-   **Permanent Static IP**: Uses **AWS Elastic IP (EIP)** to ensure the application IP (`<BASTION_IP>`) never changes, even if the infrastructure is destroyed and recreated.
 -   **Security**: Uses **IAM Roles** (Instance Profiles) for secure S3 access, avoiding hardcoded AWS Keys.
 
 ### 2. 🚀 CI/CD Pipeline
@@ -36,6 +36,14 @@ Running `terraform apply` performs the entire end-to-end setup without manual in
 2.  **Configuration**: Automatically installs Docker and Docker Compose via `user_data` scripts.
 3.  **Deployment**: Uploads Airflow DAGs and Configs.
 4.  **Startup**: Launch the application using `remote-exec` and auto-generates `.env` files for configuration.
+
+---
+
+## 🔒 Security
+All sensitive infrastructure keys and secrets are managed via **GitHub Secrets** and **Terraform Variables**.
+-   **No Hardcoded Secrets**: `.env` files and `*.pem` keys are git-ignored.
+-   **IAM Roles**: Used for AWS Service authentication (S3).
+-   **Network Isolation**: Airflow runs in a Private Subnet, accessible only via a hardened Bastion Host.
 
 ---
 
@@ -77,8 +85,8 @@ terraform apply -var-file="prod.tfvars" -var="private_key_path=/path/to/your/key
 
 ### 2. Access the Platform
 Once applied, Terraform will output the public IP.
--   **Web UI**: `http://98.80.31.243:8080`
--   **Login**: `airflow` / `airflow`
+-   **Web UI**: `http://<BASTION_IP>:8080`
+-   **Login**: Default credentials (printed in Terraform Output or preset in `.env`)
 
 ### 3. Destroy (Cost Savings)
 When finished, strictly follow the **Destroy-Before-Create** workflow to avoid costs:
